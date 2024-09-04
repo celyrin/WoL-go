@@ -9,54 +9,80 @@ jobs:
   build:
     name: Build Release Binaries
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: 386
-          - goos: linux
-            goarch: arm
-          - goos: linux
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
-          - goos: windows
-            goarch: 386
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
     steps:
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '1.18'
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.18'
 
-    - name: Check out code
-      uses: actions/checkout@v2
+      - name: Check out code
+        uses: actions/checkout@v2
 
-    - name: Build binary
-      run: |
-        export GOOS=${{ matrix.goos }}
-        export GOARCH=${{ matrix.goarch }}
-        go mod tidy
-        go build -o WoL-go-${{ matrix.goos }}-${{ matrix.goarch }} -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
+      # Build binary for linux/amd64
+      - name: Build binary for Linux AMD64
+        run: |
+          export GOOS=linux
+          export GOARCH=amd64
+          go mod tidy
+          go build -o WoL-go-linux-amd64 -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
 
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
+      # Build binary for linux/386
+      - name: Build binary for Linux 386
+        run: |
+          export GOOS=linux
+          export GOARCH=386
+          go mod tidy
+          go build -o WoL-go-linux-386 -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
 
-  create_release:
-    name: Create Release and Upload Assets
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2
+      # Build binary for linux/arm
+      - name: Build binary for Linux ARM
+        run: |
+          export GOOS=linux
+          export GOARCH=arm
+          go mod tidy
+          go build -o WoL-go-linux-arm -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
+
+      # Build binary for linux/arm64
+      - name: Build binary for Linux ARM64
+        run: |
+          export GOOS=linux
+          export GOARCH=arm64
+          go mod tidy
+          go build -o WoL-go-linux-arm64 -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
+
+      # Build binary for windows/amd64
+      - name: Build binary for Windows AMD64
+        run: |
+          export GOOS=windows
+          export GOARCH=amd64
+          go mod tidy
+          export CGO_ENABLED=1
+          go build -o WoL-go-windows-amd64.exe -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
+
+      # Build binary for windows/386
+      - name: Build binary for Windows 386
+        run: |
+          export GOOS=windows
+          export GOARCH=386
+          go mod tidy
+          export CGO_ENABLED=1
+          go build -o WoL-go-windows-386.exe -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
+
+      # Build binary for darwin/amd64
+      - name: Build binary for Darwin AMD64
+        run: |
+          export GOOS=darwin
+          export GOARCH=amd64
+          go mod tidy
+          go build -o WoL-go-darwin-amd64 -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
+
+      # Build binary for darwin/arm64
+      - name: Build binary for Darwin ARM64
+        run: |
+          export GOOS=darwin
+          export GOARCH=arm64
+          go mod tidy
+          go build -o WoL-go-darwin-arm64 -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
 
       - name: Create Release
         id: create_release
@@ -69,12 +95,92 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Assets
+      # Upload binary for linux/amd64
+      - name: Upload Linux AMD64 Binary
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: WoL-go-*
-          asset_name: WoL-go-*
+          asset_path: ./WoL-go-linux-amd64
+          asset_name: WoL-go-linux-amd64
           asset_content_type: application/octet-stream
+
+      # Upload binary for linux/386
+      - name: Upload Linux 386 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./WoL-go-linux-386
+          asset_name: WoL-go-linux-386
+          asset_content_type: application/octet-stream
+
+      # Upload binary for linux/arm
+      - name: Upload Linux ARM Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./WoL-go-linux-arm
+          asset_name: WoL-go-linux-arm
+          asset_content_type: application/octet-stream
+
+      # Upload binary for linux/arm64
+      - name: Upload Linux ARM64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./WoL-go-linux-arm64
+          asset_name: WoL-go-linux-arm64
+          asset_content_type: application/octet-stream
+
+      # Upload binary for windows/amd64
+      - name: Upload Windows AMD64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./WoL-go-windows-amd64.exe
+          asset_name: WoL-go-windows-amd64.exe
+          asset_content_type: application/octet-stream
+
+      # Upload binary for windows/386
+      - name: Upload Windows 386 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./WoL-go-windows-386.exe
+          asset_name: WoL-go-windows-386.exe
+          asset_content_type: application/octet-stream
+
+      # Upload binary for darwin/amd64
+      - name: Upload Darwin AMD64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./WoL-go-darwin-amd64
+          asset_name: WoL-go-darwin-amd64
+          asset_content_type: application/octet-stream
+
+      # Upload binary for darwin/arm64
+      - name: Upload Darwin ARM64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./WoL-go-darwin-arm64
+          asset_name: WoL-go-darwin-arm64
+          asset_content_type: application/octet-stream
+
+
