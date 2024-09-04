@@ -1,4 +1,4 @@
-module wake-on-lan-service
+module WoL-go
 
 go 1.18
 

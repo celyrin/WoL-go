@@ -13,8 +13,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux, windows, darwin]
-        goarch: [amd64, 386, arm, arm64]
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: 386
+          - goos: linux
+            goarch: arm
+          - goos: linux
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: 386
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
     steps:
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -23,10 +38,6 @@ jobs:
 
     - name: Check out code
       uses: actions/checkout@v2
-
-    - name: Set up QEMU
-      if: matrix.goos != 'linux'
-      uses: docker/setup-qemu-action@v1
 
     - name: Build binary
       run: |
