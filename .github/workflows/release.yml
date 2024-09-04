@@ -71,9 +71,12 @@ jobs:
       run: |
         for file in binaries/*; do
           echo "Uploading $file"
-          curl -X POST \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Content-Type: application/octet-stream" \
-          --data-binary @"$file" \
-          "${{ steps.create_release.outputs.upload_url }}?name=$(basename $file)"
+          curl \
+            -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            -H "Accept: application/vnd.github.v3+json" \
+            --data-binary @"$file" \
+            "${{ steps.create_release.outputs.upload_url }}?name=$(basename $file)" \
+            --fail
         done
