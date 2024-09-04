@@ -32,7 +32,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: '1.18' 
+        go-version: '1.18'
 
     - name: Check out code
       uses: actions/checkout@v2
@@ -44,29 +44,37 @@ jobs:
         go mod tidy
         go build -o WoL-go-${{ matrix.goos }}-${{ matrix.goarch }} -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
 
-    - name: Upload artifacts
+    - name: Upload Build Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
         path: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
+  create_release:
+    name: Create Release and Upload Assets
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
-        asset_name: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
-        asset_content_type: application/octet-stream
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        run: |
+          for asset in WoL-go-*; do
+            echo "Uploading $asset"
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -H "Content-Type: application/octet-stream" \
+                 --data-binary @$asset \
+                 "${{ steps.create_release.outputs.upload_url }}?name=$(basename $asset)&label=$(basename $asset)"
+          done
