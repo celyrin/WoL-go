@@ -42,7 +42,6 @@ jobs:
         export GOOS=${{ matrix.goos }}
         export GOARCH=${{ matrix.goarch }}
         go mod tidy
-        export CGO_ENABLED=1
         go build -o WoL-go-${{ matrix.goos }}-${{ matrix.goarch }} -ldflags "-X main.defaultMode=release -extldflags '-static'"  main.go
 
     - name: Upload artifacts
