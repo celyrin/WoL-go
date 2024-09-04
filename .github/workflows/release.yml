@@ -56,7 +56,6 @@ jobs:
           export GOOS=windows
           export GOARCH=amd64
           go mod tidy
-          export CGO_ENABLED=1
           go build -o WoL-go-windows-amd64.exe -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
 
       # Build binary for windows/386
@@ -65,7 +64,6 @@ jobs:
           export GOOS=windows
           export GOARCH=386
           go mod tidy
-          export CGO_ENABLED=1
           go build -o WoL-go-windows-386.exe -ldflags "-X main.defaultMode=release -extldflags '-static'" main.go
 
       # Build binary for darwin/amd64
