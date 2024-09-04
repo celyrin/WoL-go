@@ -32,6 +32,7 @@ jobs:
       run: |
         export GOOS=${{ matrix.goos }}
         export GOARCH=${{ matrix.goarch }}
+        go mod tidy
         go build -o WoL-go-${{ matrix.goos }}-${{ matrix.goarch }} -ldflags "-X main.defaultMode=release" main.go
 
     - name: Upload artifacts
