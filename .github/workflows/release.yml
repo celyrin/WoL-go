@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - 'main'
 
 jobs:
   build:
@@ -52,12 +50,14 @@ jobs:
         name: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
         path: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
 
-  release:
+ release:
     needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Download all binaries
       uses: actions/download-artifact@v2
+      with:
+        path: ./
 
     - name: Create Release
       id: create_release
@@ -71,11 +71,13 @@ jobs:
         prerelease: false
 
     - name: Upload Release Assets
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
-        asset_name: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
-        asset_content_type: application/octet-stream
+      run: |
+        for file in WoL-go-*; do
+          echo "Uploading $file"
+          curl \
+            -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"${file}" \
+            "${{ steps.create_release.outputs.upload_url }}?name=$(basename ${file})"
+        done
