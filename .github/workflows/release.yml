@@ -42,7 +42,8 @@ jobs:
         export GOOS=${{ matrix.goos }}
         export GOARCH=${{ matrix.goarch }}
         go mod tidy
-        go build -o WoL-go-${{ matrix.goos }}-${{ matrix.goarch }} -ldflags "-X main.defaultMode=release" main.go
+        export CGO_ENABLED=1
+        go build -o WoL-go-${{ matrix.goos }}-${{ matrix.goarch }} -ldflags "-X main.defaultMode=release" -extldflags "-static" main.go
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
@@ -51,33 +52,29 @@ jobs:
         path: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
 
   release:
-      needs: build
-      runs-on: ubuntu-latest
-      steps:
-      - name: Download all binaries
-        uses: actions/download-artifact@v2
-        with:
-          path: ./
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
-        run: |
-          for file in WoL-go-*; do
-            echo "Uploading $file"
-            curl \
-              -X POST \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Content-Type: application/octet-stream" \
-              --data-binary @"${file}" \
-              "${{ steps.create_release.outputs.upload_url }}?name=$(basename ${file})"
-          done
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        path: ./binaries
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+    - name: Upload Release Assets
+      run: |
+        for file in binaries/*; do
+          echo "Uploading $file"
+          curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/octet-stream" \
+          --data-binary @"$file" \
+          "${{ steps.create_release.outputs.upload_url }}?name=$(basename $file)"
+        done
