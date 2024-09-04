@@ -1,0 +1,67 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build Release Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, 386, arm, arm64]
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.16'  # 可根据需要选择其他版本
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      if: matrix.goos != 'linux'
+      uses: docker/setup-qemu-action@v1
+
+    - name: Build binary
+      run: |
+        export GOOS=${{ matrix.goos }}
+        export GOARCH=${{ matrix.goarch }}
+        go build -o WoL-go-${{ matrix.goos }}-${{ matrix.goarch }} -ldflags "-X main.defaultMode=release" main.go
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all binaries
+      uses: actions/download-artifact@v2
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
+        asset_name: WoL-go-${{ matrix.goos }}-${{ matrix.goarch }}
+        asset_content_type: application/octet-stream
